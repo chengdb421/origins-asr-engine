@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- 简单关键词测评模型的配置 -->
+<simple:model
+	xmlns:simple="https://www.cnwansun.com/tech/audio/evaluate/simple">
+	<simple:parameter name="name"
+		value="simple-keyword-evaluate-model" />
+	<simple:parameter name="version" value="1.0.0" />
+	<simple:parameter name="description"
+		value="通过关键字的分布概率进行测评" />
+	<!-- 违规规则 -->
+	<simple:parameter name="ISSUE_REGULAR"
+		value="(妈的|你妈|死|瓜娃子)" />
+     <!-- 违法规则 -->
+	<simple:parameter name="ISSUE_LAW" value="(法院|娘|判刑|杀)" />
+</simple:model>

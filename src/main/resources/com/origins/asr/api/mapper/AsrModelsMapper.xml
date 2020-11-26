@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.origins.asr.api.mapper.AsrModelsMapper">
+	<resultMap id="taskModel"
+		type="com.origins.asr.api.models.AsrTaskModel">
+		<constructor>
+			<idArg column="id" jdbcType="INTEGER" javaType="int" />
+			<arg column="project_uuid" jdbcType="VARCHAR" javaType="string" />
+			<arg column="uuid" jdbcType="VARCHAR" javaType="string" />
+			<arg column="raw_media_url" jdbcType="VARCHAR" javaType="string" />
+			<arg column="temporary_media_url" jdbcType="VARCHAR"
+				javaType="string" />
+			<arg column="state" jdbcType="VARCHAR" javaType="string" />
+			<arg column="request_id" jdbcType="VARCHAR" javaType="string" />
+			<arg column="created_at" jdbcType="TIMESTAMP"
+				javaType="java.util.Date" />
+			<arg column="running_at" jdbcType="TIMESTAMP"
+				javaType="java.util.Date" />
+			<arg column="completed_at" jdbcType="TIMESTAMP"
+				javaType="java.util.Date" />
+			<arg column="result_text" jdbcType="VARCHAR" javaType="string" />
+			<arg column="model_name" jdbcType="VARCHAR" javaType="string" />
+			<arg column="error_message" jdbcType="VARCHAR" javaType="string" />
+			<arg column="sequence" jdbcType="INTEGER" javaType="int" />
+		</constructor>
+	</resultMap>
+
+	<!-- 通过UUID获取任务模型 -->
+	<select id="findAsrTaskModelByUuid" resultMap="taskModel">
+	  <![CDATA[
+	   select * from asr_task where uuid = #{uuid}
+	  ]]>
+	</select>
+
+	<!-- 根据RequestID获取任务 -->
+	<select id="findAsrTaskModelByRequestId" resultMap="taskModel">
+	  <![CDATA[
+	   select * from asr_task where request_id = #{requestId}
+	  ]]>
+	</select>
+	<!-- 添加一个新的语音任务模型 -->
+	<insert id="insertAsNewAsrTaskModel"
+		parameterType="com.origins.asr.api.models.AsrTaskModel"
+		useGeneratedKeys="true" keyProperty="id">
+		<![CDATA[
+		 insert into asr_task (
+		   uuid,
+		   project_uuid,
+		   raw_media_url,
+		   created_at,
+		   running_at,
+		   model_name,
+		   temporary_media_url,
+		   state,
+		   sequence
+		   ) values (#{uuid},#{projectUUID},#{rawMediaUrl},now(),now(),#{modelName},#{temporaryMediaUrl},#{state},#{sequence})
+		]]>
+	</insert>
+
+	<!--修改语音任务模型的状态 -->
+	<update id="updateAsrTaskModelStatus"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+		 <![CDATA[
+		   update asr_task set state = #{state} where uuid = #{uuid}
+		 ]]>
+	</update>
+
+	<!-- 修改语音任务模型的运行时间 -->
+	<update id="updateAsrTaskModelRunningTime"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+		<![CDATA[
+		  update asr_task set running_at = now() where uuid = #{uuid}
+		]]>
+	</update>
+
+    <!-- 更新媒体URL -->
+	<update id="updateAsrTaskMediaUrl"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+      <![CDATA[
+        update asr_task set raw_media_url = #{rawMediaUrl},temporary_media_url = #{temporaryMediaUrl} where uuid = #{uuid}
+      ]]>
+	</update>
+	<!-- 修改语音任务的完成结果 -->
+	<update id="completeAsrTaskModel"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+		<![CDATA[
+		 update asr_task set error_message = null,result_text = #{resultText},state=#{state},running_at=#{completedAt},completed_at=#{completedAt} where uuid = #{uuid}
+		]]>
+	</update>
+
+	<!-- 记录语音任务的错误信息 -->
+	<update id="recordErrorWithAsrTaskModel"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+		<![CDATA[
+		 update asr_task set error_message = #{errorMessage} ,state=#{state},completed_at = now() where uuid=#{uuid}
+		]]>
+	</update>
+
+	<!-- 更新任务ID -->
+	<update id="updateAsrTaskModelRequestId"
+		parameterType="com.origins.asr.api.models.AsrTaskModel">
+      <![CDATA[
+        update asr_task set request_id = #{requestId} ,state=#{state},running_at = now() where uuid=#{uuid}
+      ]]>
+	</update>
+	<!-- 获取处于尚未结束的任务 -->
+	<select id="findUnCompletedTasks" resultMap="taskModel">
+		<![CDATA[
+		   select * from asr_task where (state is null or state = 'RUNNING') and request_id is not null order by sequence asc limit 0,50
+		]]>
+	</select>
+
+	<select id="findAllTasks" resultMap="taskModel">
+     <![CDATA[
+       select * from asr_task where created_at > #{begin_at}
+     ]]>
+	</select>
+	<!-- 更新sequence -->
+	<update id="incrementSequence">
+		update asr_task set sequence = sequence + 1 where id in
+		<foreach collection="list" item="element" index="index"
+			open="(" close=")" separator=",">
+			#{element.id}
+		</foreach>
+	</update>
+
+	<update id="updateProjectUUID"
+		parameterType="com.origins.asr.api.emergency.SyncUUIDMessage">
+		update asr_task set project_uuid = #{projectUUID} where
+		uuid = #{taskId}
+	</update>
+</mapper>
